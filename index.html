@@ -137,10 +137,18 @@
       <div class="card">
         <div class="card-title">伝票写真をアップロード</div>
         <div class="upload-area" id="upload-area">
-          <input type="file" id="file-input" accept="image/*" capture="environment"/>
           <div class="upload-icon">📋</div>
-          <div class="upload-text"><strong>写真を選択 / カメラで撮影</strong></div>
-          <div class="upload-text" style="font-size:12px;margin-top:4px;">スマホからそのまま撮影できます</div>
+          <div class="upload-text" style="margin-bottom:14px;"><strong>伝票を選んでください</strong></div>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <label style="background:var(--green);color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+              📷 カメラで撮影
+              <input type="file" id="file-input-camera" accept="image/*" capture="environment" style="display:none;"/>
+            </label>
+            <label style="background:var(--white);color:var(--green);border:2px solid var(--green);padding:12px 20px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+              🖼 アルバムから選ぶ
+              <input type="file" id="file-input-album" accept="image/*" style="display:none;"/>
+            </label>
+          </div>
           <img id="preview-img" alt="プレビュー"/>
         </div>
         <div class="loading" id="ocr-loading"><span class="spinner"></span>読み取り中...</div>
@@ -379,21 +387,18 @@ function showPage(name){
 
 // 仕入れ
 let items=[],imageBase64='',imageMimeType='image/jpeg';
-const fileInput=document.getElementById('file-input');
 const previewImg=document.getElementById('preview-img');
 const ocrBtn=document.getElementById('ocr-btn');
 
-fileInput.addEventListener('change',e=>{
-  const file=e.target.files[0];if(!file)return;
+function handleFileSelect(file) {
+  if(!file)return;
   imageMimeType=file.type||'image/jpeg';
   const reader=new FileReader();
   reader.onload=ev=>{previewImg.src=ev.target.result;previewImg.style.display='block';imageBase64=ev.target.result.split(',')[1];ocrBtn.disabled=false;};
   reader.readAsDataURL(file);
-});
-const uploadArea=document.getElementById('upload-area');
-uploadArea.addEventListener('dragover',e=>{e.preventDefault();uploadArea.classList.add('dragover');});
-uploadArea.addEventListener('dragleave',()=>uploadArea.classList.remove('dragover'));
-uploadArea.addEventListener('drop',e=>{e.preventDefault();uploadArea.classList.remove('dragover');const file=e.dataTransfer.files[0];if(file){fileInput.files=e.dataTransfer.files;fileInput.dispatchEvent(new Event('change'));}});
+}
+document.getElementById('file-input-camera').addEventListener('change',e=>handleFileSelect(e.target.files[0]));
+document.getElementById('file-input-album').addEventListener('change',e=>handleFileSelect(e.target.files[0]));
 
 ocrBtn.addEventListener('click',async()=>{
   const apiKey=document.getElementById('api-key').value.trim();
