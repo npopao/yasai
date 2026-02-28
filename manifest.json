@@ -1,0 +1,24 @@
+{
+  "name": "仕入れ管理 | 八百屋アプリ",
+  "short_name": "仕入れ管理",
+  "description": "伝票写真から仕入れ単価・売値を自動計算してスプシに転記",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#faf7f0",
+  "theme_color": "#2d5a27",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

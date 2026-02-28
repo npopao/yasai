@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="仕入れ管理">
+<meta name="theme-color" content="#2d5a27">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="icon" href="/favicon.png">
+<title>仕入れ管理 | 八百屋アプリ</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #2d5a27; --green-light: #4a8c42; --green-pale: #e8f5e2;
+    --cream: #faf7f0; --white: #ffffff; --text: #1a1a1a;
+    --text-muted: #6b6b6b; --border: #d4e8cc;
+    --shadow: rgba(45,90,39,0.12); --accent: #e8571a;
+    --safe-top: env(safe-area-inset-top);
+    --safe-bottom: env(safe-area-inset-bottom);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: 'Zen Kaku Gothic New', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; min-height: 100dvh; }
+
+  header {
+    background: var(--green);
+    padding: 16px 24px;
+    padding-top: calc(16px + var(--safe-top));
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 2px 12px var(--shadow);
+    position: sticky; top: 0; z-index: 100;
+  }
+  header .logo { font-size: 20px; font-weight: 900; color: var(--white); letter-spacing: 0.04em; }
+  header .logo span { color: #a8d89e; }
+  header .date { margin-left: auto; font-family: 'DM Mono', monospace; font-size: 12px; color: #a8d89e; }
+
+  main {
+    max-width: 640px; margin: 0 auto;
+    padding: 20px 16px;
+    padding-bottom: calc(24px + var(--safe-bottom));
+  }
+
+  .step-indicator { display: flex; margin-bottom: 20px; background: var(--white); border-radius: 12px; border: 1.5px solid var(--border); overflow: hidden; }
+  .step { flex: 1; padding: 10px 6px; text-align: center; font-size: 11px; font-weight: 700; color: var(--text-muted); border-right: 1.5px solid var(--border); transition: all 0.3s; }
+  .step:last-child { border-right: none; }
+  .step.active { background: var(--green); color: var(--white); }
+  .step.done { background: var(--green-pale); color: var(--green); }
+  .step .num { display: block; font-size: 16px; margin-bottom: 2px; }
+
+  .card { background: var(--white); border-radius: 16px; border: 1.5px solid var(--border); padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 20px var(--shadow); }
+  .card-title { font-size: 14px; font-weight: 900; color: var(--green); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .card-title::before { content: ''; display: inline-block; width: 4px; height: 16px; background: var(--green); border-radius: 2px; flex-shrink: 0; }
+
+  .upload-area { border: 2.5px dashed var(--border); border-radius: 12px; padding: 28px 16px; text-align: center; cursor: pointer; transition: all 0.25s; position: relative; }
+  .upload-area:hover, .upload-area.dragover { border-color: var(--green-light); background: var(--green-pale); }
+  .upload-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; font-size: 16px; }
+  .upload-icon { font-size: 36px; margin-bottom: 8px; }
+  .upload-text { font-size: 14px; color: var(--text-muted); }
+  .upload-text strong { color: var(--green); }
+  #preview-img { max-width: 100%; max-height: 200px; border-radius: 10px; margin-top: 12px; display: none; object-fit: contain; }
+
+  .api-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+  .api-row label { font-size: 12px; font-weight: 700; color: var(--text-muted); white-space: nowrap; }
+  .api-row input { flex: 1; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 16px; font-family: 'DM Mono', monospace; background: var(--cream); min-width: 0; }
+  .api-row input:focus { outline: none; border-color: var(--green-light); }
+
+  .btn { padding: 14px 20px; border-radius: 12px; font-size: 15px; font-weight: 700; font-family: 'Zen Kaku Gothic New', sans-serif; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; touch-action: manipulation; }
+  .btn-primary { background: var(--green); color: var(--white); width: 100%; }
+  .btn-primary:active { background: var(--green-light); transform: scale(0.98); }
+  .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
+  .btn-outline { background: transparent; color: var(--green); border: 1.5px solid var(--green); }
+  .btn-outline:active { background: var(--green-pale); }
+  .btn-accent { background: var(--accent); color: var(--white); }
+  .btn-accent:active { background: #c94510; transform: scale(0.98); }
+
+  .table-wrap { overflow-x: auto; margin-top: 8px; -webkit-overflow-scrolling: touch; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 380px; }
+  th { background: var(--green); color: var(--white); padding: 9px 8px; text-align: left; font-weight: 700; font-size: 11px; white-space: nowrap; }
+  th:first-child { border-radius: 8px 0 0 0; } th:last-child { border-radius: 0 8px 0 0; }
+  td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: var(--green-pale); }
+
+  input.cell-input { width: 72px; padding: 8px 6px; border: 1.5px solid var(--border); border-radius: 6px; font-size: 14px; font-family: 'DM Mono', monospace; text-align: right; background: var(--white); }
+  input.cell-input:focus { outline: none; border-color: var(--green-light); }
+
+  .price-calc { font-family: 'DM Mono', monospace; font-size: 13px; white-space: nowrap; }
+  .sell-price { font-weight: 700; color: var(--accent); }
+
+  .loading { display: none; text-align: center; padding: 16px; color: var(--green); font-weight: 700; font-size: 14px; }
+  .loading.show { display: block; }
+  .spinner { display: inline-block; width: 22px; height: 22px; border: 3px solid var(--green-pale); border-top-color: var(--green); border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .msg { padding: 12px 14px; border-radius: 10px; font-size: 13px; margin-top: 10px; display: none; line-height: 1.5; }
+  .msg.show { display: block; }
+  .msg.error { background: #ffeee8; color: #c94510; border: 1px solid #f4c4b0; }
+  .msg.success { background: var(--green-pale); color: var(--green); border: 1px solid var(--border); }
+
+  .sheets-config { background: var(--green-pale); border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+  .sheets-config label { font-size: 12px; font-weight: 700; color: var(--green); display: block; margin-bottom: 4px; }
+  .sheets-config input { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--white); margin-bottom: 10px; }
+  .sheets-config input:focus { outline: none; border-color: var(--green-light); }
+
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+  .badge { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; background: var(--green-pale); color: var(--green); margin-left: 4px; }
+  .free-badge { display: inline-block; background: #fff3cd; color: #856404; border: 1px solid #ffc107; border-radius: 20px; font-size: 11px; font-weight: 700; padding: 3px 8px; }
+  .btn-del { background: none; border: none; color: #ccc; cursor: pointer; font-size: 18px; padding: 6px; transition: color 0.2s; }
+  .btn-del:active { color: var(--accent); }
+  .add-row-btn { margin-top: 10px; background: none; border: 1.5px dashed var(--border); color: var(--text-muted); border-radius: 8px; padding: 10px; cursor: pointer; font-size: 14px; font-family: 'Zen Kaku Gothic New', sans-serif; font-weight: 700; width: 100%; transition: all 0.2s; }
+  .add-row-btn:active { border-color: var(--green-light); color: var(--green); background: var(--green-pale); }
+  .help-text { font-size: 11px; color: var(--text-muted); margin-top: 6px; line-height: 1.6; }
+
+  /* PWAインストール案内 */
+  .install-banner { background: var(--green); color: var(--white); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; display: none; font-size: 13px; line-height: 1.6; }
+  .install-banner.show { display: block; }
+  .install-banner strong { display: block; margin-bottom: 4px; font-size: 14px; }
+
+  .gas-code { background: #1a1a2e; border-radius: 10px; padding: 14px; font-family: 'DM Mono', monospace; font-size: 11px; color: #a8d89e; overflow-x: auto; white-space: pre; margin-top: 10px; -webkit-overflow-scrolling: touch; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🥦 仕入れ<span>管理</span></div>
+  <div class="date" id="today-date"></div>
+</header>
+
+<main>
+  <!-- PWAインストール案内 -->
+  <div class="install-banner" id="install-banner">
+    <strong>📱 ホーム画面に追加できます</strong>
+    iPhone: 下の共有ボタン →「ホーム画面に追加」<br>
+    Android: メニュー →「アプリをインストール」
+  </div>
+
+  <div class="step-indicator">
+    <div class="step active" id="step1-tab"><span class="num">①</span>伝票読取</div>
+    <div class="step" id="step2-tab"><span class="num">②</span>個数入力</div>
+    <div class="step" id="step3-tab"><span class="num">③</span>スプシ転記</div>
+  </div>
+
+  <!-- STEP1 -->
+  <div id="panel-step1">
+    <div class="card">
+      <div class="card-title">Gemini APIキー <span class="free-badge">✨ 無料</span></div>
+      <div class="api-row">
+        <label>APIキー</label>
+        <input type="password" id="api-key" placeholder="AIza..." autocomplete="off" />
+      </div>
+      <p class="help-text">
+        ※ <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--green);font-weight:700;">Google AI Studio</a> で無料取得（Googleアカウントだけ）。1日1,500回まで無料。<br>
+        ※ キーはこのブラウザのメモリにのみ保持されます。
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">伝票写真をアップロード</div>
+      <div class="upload-area" id="upload-area">
+        <input type="file" id="file-input" accept="image/*" capture="environment" />
+        <div class="upload-icon">📋</div>
+        <div class="upload-text"><strong>写真を選択 / カメラで撮影</strong></div>
+        <div class="upload-text" style="font-size:12px;margin-top:4px;">スマホからそのまま撮影できます</div>
+        <img id="preview-img" alt="プレビュー" />
+      </div>
+      <div class="loading" id="ocr-loading"><span class="spinner"></span>読み取り中...</div>
+      <div class="msg" id="ocr-msg"></div>
+      <button class="btn btn-primary" id="ocr-btn" style="margin-top:14px;" disabled>📷 伝票を読み取る</button>
+    </div>
+  </div>
+
+  <!-- STEP2 -->
+  <div id="panel-step2" style="display:none;">
+    <div class="card">
+      <div class="card-title">仕入れ一覧 <span class="badge" id="item-count">0件</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>品名</th><th>箱単価</th><th>個数</th><th>バラ単価</th><th>売値×1.2</th><th></th></tr></thead>
+          <tbody id="items-body"></tbody>
+        </table>
+      </div>
+      <button class="add-row-btn" id="add-row-btn">＋ 行を追加</button>
+      <div class="btn-row">
+        <button class="btn btn-outline" id="back-btn">← 戻る</button>
+        <button class="btn btn-primary" id="next-btn" style="flex:1;">スプシに転記 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP3 -->
+  <div id="panel-step3" style="display:none;">
+    <div class="card">
+      <div class="card-title">Google スプレッドシートに転記</div>
+      <div class="sheets-config">
+        <label>スプレッドシートID</label>
+        <input type="text" id="sheet-id" placeholder="URLの /d/ と /edit の間の文字列" />
+        <label>シート名</label>
+        <input type="text" id="sheet-name" value="仕入れ記録" />
+        <label>Google Apps Script URL</label>
+        <input type="text" id="gas-url" placeholder="https://script.google.com/macros/s/..." />
+      </div>
+      <div class="loading" id="sheets-loading"><span class="spinner"></span>転記中...</div>
+      <div class="msg" id="sheets-msg"></div>
+      <div class="btn-row">
+        <button class="btn btn-outline" id="back-btn2">← 戻る</button>
+        <button class="btn btn-accent" id="sheets-btn" style="flex:1;">📊 スプシに転記する</button>
+      </div>
+      <div style="margin-top:10px;">
+        <button class="btn btn-outline" id="csv-btn" style="width:100%;">⬇ CSVでダウンロード</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Google Apps Script 設定（初回のみ）</div>
+      <ol style="font-size:13px;line-height:2.2;color:var(--text-muted);padding-left:18px;">
+        <li>Google スプレッドシートを新規作成</li>
+        <li>URLの <code style="background:#eee;padding:1px 5px;border-radius:3px;">/d/</code> と <code style="background:#eee;padding:1px 5px;border-radius:3px;">/edit</code> の間 → スプレッドシートID</li>
+        <li>「拡張機能」→「Apps Script」を開く</li>
+        <li>下記コードを貼り付けて保存</li>
+        <li>「デプロイ」→「新しいデプロイ」→ 種類：<strong>ウェブアプリ</strong></li>
+        <li>アクセスできるユーザー：<strong>全員</strong> → デプロイ</li>
+        <li>発行されたURLを上の欄に貼る</li>
+      </ol>
+      <div class="gas-code">function doPost(e) {
+  var data = JSON.parse(e.postData.contents);
+  var ss = SpreadsheetApp.openById(data.sheetId);
+  var sheet = ss.getSheetByName(data.sheetName)
+            || ss.insertSheet(data.sheetName);
+
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(['日付','品名','箱単価','個数','バラ単価','売値(×1.2)','合計仕入額']);
+    sheet.getRange(1,1,1,7).setFontWeight('bold')
+      .setBackground('#2d5a27').setFontColor('#ffffff');
+  }
+
+  data.rows.forEach(function(row) { sheet.appendRow(row); });
+
+  return ContentService
+    .createTextOutput(JSON.stringify({status:'ok'}))
+    .setMimeType(ContentService.MimeType.JSON);
+}</div>
+    </div>
+  </div>
+</main>
+
+<script>
+// 日付
+const today = new Date();
+document.getElementById('today-date').textContent =
+  today.toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'});
+
+// PWAインストール案内（スマホのみ表示）
+if (/iPhone|iPad|Android/.test(navigator.userAgent) && !window.matchMedia('(display-mode: standalone)').matches) {
+  document.getElementById('install-banner').classList.add('show');
+}
+
+// Service Worker登録
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(()=>{});
+}
+
+let items = [];
+let imageBase64 = '';
+let imageMimeType = 'image/jpeg';
+
+const fileInput = document.getElementById('file-input');
+const previewImg = document.getElementById('preview-img');
+const ocrBtn = document.getElementById('ocr-btn');
+
+fileInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  imageMimeType = file.type || 'image/jpeg';
+  const reader = new FileReader();
+  reader.onload = ev => {
+    previewImg.src = ev.target.result;
+    previewImg.style.display = 'block';
+    imageBase64 = ev.target.result.split(',')[1];
+    ocrBtn.disabled = false;
+  };
+  reader.readAsDataURL(file);
+});
+
+const uploadArea = document.getElementById('upload-area');
+uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+uploadArea.addEventListener('drop', e => {
+  e.preventDefault(); uploadArea.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) { fileInput.files = e.dataTransfer.files; fileInput.dispatchEvent(new Event('change')); }
+});
+
+// OCR（Gemini）
+ocrBtn.addEventListener('click', async () => {
+  const apiKey = document.getElementById('api-key').value.trim();
+  if (!apiKey) { showMsg('ocr-msg','error','APIキーを入力してください。'); return; }
+  if (!imageBase64) { showMsg('ocr-msg','error','画像を選択してください。'); return; }
+  ocrBtn.disabled = true;
+  document.getElementById('ocr-loading').classList.add('show');
+  hideMsg('ocr-msg');
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          contents:[{parts:[
+            {inline_data:{mime_type:imageMimeType, data:imageBase64}},
+            {text:`この伝票画像から商品情報を読み取り、以下のJSON形式のみで返してください。前置き・説明・マークダウン不要。
+{"items":[{"品名":"トマト","箱単価":1800}]}
+金額は数値のみ（円マーク・カンマ除外）。読み取れなければ{"items":[]}で返してください。`}
+          ]}]
+        })
+      }
+    );
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || 'APIエラー');
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('JSONが取得できませんでした');
+    const parsed = JSON.parse(match[0]);
+    items = (parsed.items||[]).map(i=>({品名:i.品名||'',箱単価:Number(i.箱単価)||0,個数:''}));
+    if (items.length === 0) {
+      showMsg('ocr-msg','error','読み取れませんでした。手動で入力してください。');
+      items = [{品名:'',箱単価:0,個数:''}];
+    } else {
+      showMsg('ocr-msg','success',`✅ ${items.length}件の商品を読み取りました！`);
+    }
+    renderTable();
+    goToStep(2);
+  } catch(err) {
+    showMsg('ocr-msg','error','エラー: '+err.message);
+  } finally {
+    document.getElementById('ocr-loading').classList.remove('show');
+    ocrBtn.disabled = false;
+  }
+});
+
+function renderTable() {
+  const tbody = document.getElementById('items-body');
+  tbody.innerHTML = '';
+  document.getElementById('item-count').textContent = items.length+'件';
+  items.forEach((item,i) => {
+    const bara = item.個数&&item.箱単価?(item.箱単価/item.個数).toFixed(1):'—';
+    const sell = item.個数&&item.箱単価?Math.ceil(item.箱単価/item.個数*1.2):'—';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input class="cell-input" style="width:76px;" type="text" value="${item.品名}" data-i="${i}" data-field="品名"/></td>
+      <td><input class="cell-input" type="number" value="${item.箱単価||''}" data-i="${i}" data-field="箱単価" placeholder="0" inputmode="numeric"/></td>
+      <td><input class="cell-input" type="number" value="${item.個数||''}" data-i="${i}" data-field="個数" placeholder="個数" inputmode="numeric"/></td>
+      <td class="price-calc">${bara!=='—'?bara+'円':'—'}</td>
+      <td class="price-calc sell-price">${sell!=='—'?sell+'円':'—'}</td>
+      <td><button class="btn-del" data-i="${i}">✕</button></td>`;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll('.cell-input').forEach(input => {
+    input.addEventListener('input', e => {
+      const i=parseInt(e.target.dataset.i), f=e.target.dataset.field;
+      items[i][f] = f==='品名'?e.target.value:Number(e.target.value);
+      updateRow(i);
+    });
+  });
+  tbody.querySelectorAll('.btn-del').forEach(btn => {
+    btn.addEventListener('click', e => { items.splice(parseInt(e.target.dataset.i),1); renderTable(); });
+  });
+}
+
+function updateRow(i) {
+  const rows = document.getElementById('items-body').rows;
+  const item = items[i];
+  const bara = item.個数&&item.箱単価?(item.箱単価/item.個数).toFixed(1):'—';
+  const sell = item.個数&&item.箱単価?Math.ceil(item.箱単価/item.個数*1.2):'—';
+  rows[i].cells[3].textContent = bara!=='—'?bara+'円':'—';
+  rows[i].cells[4].textContent = sell!=='—'?sell+'円':'—';
+}
+
+document.getElementById('add-row-btn').addEventListener('click', () => {
+  items.push({品名:'',箱単価:0,個数:''});
+  renderTable();
+  const inputs = document.getElementById('items-body').querySelectorAll('.cell-input');
+  if (inputs.length) inputs[inputs.length-4].focus();
+});
+
+document.getElementById('sheets-btn').addEventListener('click', async () => {
+  const gasUrl = document.getElementById('gas-url').value.trim();
+  const sheetId = document.getElementById('sheet-id').value.trim();
+  const sheetName = document.getElementById('sheet-name').value.trim()||'仕入れ記録';
+  if (!gasUrl) { showMsg('sheets-msg','error','GAS URLを入力してください。'); return; }
+  if (!sheetId) { showMsg('sheets-msg','error','スプレッドシートIDを入力してください。'); return; }
+  document.getElementById('sheets-loading').classList.add('show');
+  hideMsg('sheets-msg');
+  const dateStr = today.toLocaleDateString('ja-JP');
+  const rows = items.map(item => {
+    const bara = item.個数&&item.箱単価?(item.箱単価/item.個数).toFixed(1):'';
+    const sell = item.個数&&item.箱単価?Math.ceil(item.箱単価/item.個数*1.2):'';
+    return [dateStr,item.品名,item.箱単価,item.個数,bara,sell,item.箱単価];
+  });
+  try {
+    const res = await fetch(gasUrl,{method:'POST',body:JSON.stringify({sheetId,sheetName,rows})});
+    const data = await res.json();
+    if (data.status==='ok') showMsg('sheets-msg','success','✅ スプレッドシートに転記しました！');
+    else throw new Error('転記に失敗しました');
+  } catch(err) {
+    showMsg('sheets-msg','error','エラー: '+err.message);
+  } finally {
+    document.getElementById('sheets-loading').classList.remove('show');
+  }
+});
+
+document.getElementById('csv-btn').addEventListener('click', () => {
+  const dateStr = today.toLocaleDateString('ja-JP');
+  let csv = '日付,品名,箱単価,個数,バラ単価,売値(×1.2),合計仕入額\n';
+  items.forEach(item => {
+    const bara = item.個数&&item.箱単価?(item.箱単価/item.個数).toFixed(1):'';
+    const sell = item.個数&&item.箱単価?Math.ceil(item.箱単価/item.個数*1.2):'';
+    csv+=`${dateStr},${item.品名},${item.箱単価},${item.個数},${bara},${sell},${item.箱単価}\n`;
+  });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));
+  a.download = `仕入れ_${dateStr.replace(/\//g,'-')}.csv`;
+  a.click();
+});
+
+document.getElementById('back-btn').addEventListener('click',()=>goToStep(1));
+document.getElementById('back-btn2').addEventListener('click',()=>goToStep(2));
+document.getElementById('next-btn').addEventListener('click',()=>goToStep(3));
+
+function goToStep(n) {
+  ['panel-step1','panel-step2','panel-step3'].forEach((id,i)=>{
+    document.getElementById(id).style.display=i+1===n?'block':'none';
+  });
+  ['step1-tab','step2-tab','step3-tab'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    el.classList.remove('active','done');
+    if(i+1===n) el.classList.add('active');
+    else if(i+1<n) el.classList.add('done');
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function showMsg(id,type,text){const el=document.getElementById(id);el.className=`msg show ${type}`;el.textContent=text;}
+function hideMsg(id){document.getElementById(id).classList.remove('show');}
+</script>
+</body>
+</html>
