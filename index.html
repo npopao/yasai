@@ -362,10 +362,12 @@
           renderItems();
 
         } catch (err) {
-          console.error(err);
+          console.error('通信エラーの詳細:', err);
           let errorMsg = '❌ エラーが発生しました。';
           if (err.message.includes('fetch')) {
-            errorMsg = '❌ 通信エラー（CORS）: GASのURLが正しいか、公開設定が「全員」になっているか確認してください。';
+            errorMsg = '❌ 通信エラー（CORS等）: GAS側の設定（「全員」に公開）と、URLが最新であることを確認してください。';
+          } else if (err.message.includes('json')) {
+            errorMsg = '❌ データ解析エラー: GAS側のAPIキー設定や、500エラーが起きていないか確認してください。';
           } else {
             errorMsg = '❌ エラー: ' + err.message;
           }

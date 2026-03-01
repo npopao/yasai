@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yasai-v1';
+const CACHE_NAME = 'yasai-v2';
 const ASSETS = [
   '/',
   '/index.html',
