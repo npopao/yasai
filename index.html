@@ -1,574 +1,510 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="仕入れ管理">
-<meta name="theme-color" content="#2d5a27">
-<link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="/icon-192.png">
-<link rel="icon" href="/favicon.png">
-<title>仕入れ管理 | 八百屋アプリ</title>
-<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --green:#2d5a27;--green-light:#4a8c42;--green-pale:#e8f5e2;
-    --cream:#faf7f0;--white:#ffffff;--text:#1a1a1a;
-    --text-muted:#6b6b6b;--border:#d4e8cc;--shadow:rgba(45,90,39,0.12);
-    --accent:#e8571a;--alert-pale:#ffeee8;
-    --safe-top:env(safe-area-inset-top);--safe-bottom:env(safe-area-inset-bottom);
-  }
-  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-  body{font-family:'Zen Kaku Gothic New',sans-serif;background:var(--cream);color:var(--text);min-height:100dvh;}
-  header{background:var(--green);padding:16px 24px;padding-top:calc(16px + var(--safe-top));display:flex;align-items:center;gap:12px;box-shadow:0 2px 12px var(--shadow);position:sticky;top:0;z-index:100;}
-  header .logo{font-size:20px;font-weight:900;color:var(--white);letter-spacing:0.04em;}
-  header .logo span{color:#a8d89e;}
-  header .date{margin-left:auto;font-family:'DM Mono',monospace;font-size:12px;color:#a8d89e;}
-  .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1.5px solid var(--border);display:flex;z-index:200;padding-bottom:var(--safe-bottom);box-shadow:0 -4px 16px var(--shadow);}
-  .nav-btn{flex:1;padding:10px 4px 8px;text-align:center;font-size:10px;font-weight:700;color:var(--text-muted);cursor:pointer;border:none;background:none;font-family:'Zen Kaku Gothic New',sans-serif;transition:all 0.2s;}
-  .nav-btn .nav-icon{font-size:22px;display:block;margin-bottom:2px;}
-  .nav-btn.active{color:var(--green);}
-  .nav-btn.active .nav-icon{transform:scale(1.1);}
-  main{max-width:640px;margin:0 auto;padding:20px 16px 90px;}
-  .page{display:none;}.page.active{display:block;}
-  .step-indicator{display:flex;margin-bottom:20px;background:var(--white);border-radius:12px;border:1.5px solid var(--border);overflow:hidden;}
-  .step{flex:1;padding:10px 6px;text-align:center;font-size:11px;font-weight:700;color:var(--text-muted);border-right:1.5px solid var(--border);transition:all 0.3s;}
-  .step:last-child{border-right:none;}
-  .step.active{background:var(--green);color:var(--white);}
-  .step.done{background:var(--green-pale);color:var(--green);}
-  .step .num{display:block;font-size:16px;margin-bottom:2px;}
-  .card{background:var(--white);border-radius:16px;border:1.5px solid var(--border);padding:20px;margin-bottom:16px;box-shadow:0 4px 20px var(--shadow);}
-  .card.low-stock{border-color:#f4c4b0;background:var(--alert-pale);}
-  .card-title{font-size:14px;font-weight:900;color:var(--green);margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-  .card-title::before{content:'';display:inline-block;width:4px;height:16px;background:var(--green);border-radius:2px;flex-shrink:0;}
-  .upload-area{border:2.5px dashed var(--border);border-radius:12px;padding:28px 16px;text-align:center;cursor:pointer;transition:all 0.25s;position:relative;}
-  .upload-area:hover,.upload-area.dragover{border-color:var(--green-light);background:var(--green-pale);}
-  .upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:16px;}
-  .upload-icon{font-size:36px;margin-bottom:8px;}
-  .upload-text{font-size:14px;color:var(--text-muted);}
-  .upload-text strong{color:var(--green);}
-  #preview-img{max-width:100%;max-height:200px;border-radius:10px;margin-top:12px;display:none;object-fit:contain;}
-  .api-row{display:flex;gap:8px;margin-bottom:8px;align-items:center;}
-  .api-row label{font-size:12px;font-weight:700;color:var(--text-muted);white-space:nowrap;}
-  .api-row input{flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:16px;font-family:'DM Mono',monospace;background:var(--cream);min-width:0;}
-  .api-row input:focus{outline:none;border-color:var(--green-light);}
-  .btn{padding:14px 20px;border-radius:12px;font-size:15px;font-weight:700;font-family:'Zen Kaku Gothic New',sans-serif;cursor:pointer;border:none;transition:all 0.2s;display:inline-flex;align-items:center;justify-content:center;gap:8px;touch-action:manipulation;}
-  .btn-primary{background:var(--green);color:var(--white);width:100%;}
-  .btn-primary:active{background:var(--green-light);transform:scale(0.98);}
-  .btn-primary:disabled{background:#aaa;cursor:not-allowed;}
-  .btn-outline{background:transparent;color:var(--green);border:1.5px solid var(--green);}
-  .btn-outline:active{background:var(--green-pale);}
-  .btn-accent{background:var(--accent);color:var(--white);}
-  .btn-accent:active{background:#c94510;transform:scale(0.98);}
-  .btn-sm{padding:7px 12px;font-size:12px;border-radius:8px;}
-  .table-wrap{overflow-x:auto;margin-top:8px;-webkit-overflow-scrolling:touch;}
-  table{width:100%;border-collapse:collapse;font-size:13px;min-width:360px;}
-  th{background:var(--green);color:var(--white);padding:9px 8px;text-align:left;font-weight:700;font-size:11px;white-space:nowrap;}
-  th:first-child{border-radius:8px 0 0 0;}th:last-child{border-radius:0 8px 0 0;}
-  td{padding:8px;border-bottom:1px solid var(--border);vertical-align:middle;}
-  tr:last-child td{border-bottom:none;}
-  tr:nth-child(even) td{background:var(--green-pale);}
-  input.cell-input{width:72px;padding:8px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:14px;font-family:'DM Mono',monospace;text-align:right;background:var(--white);}
-  input.cell-input:focus{outline:none;border-color:var(--green-light);}
-  .price-calc{font-family:'DM Mono',monospace;font-size:13px;white-space:nowrap;}
-  .sell-price{font-weight:700;color:var(--accent);}
-  .loading{display:none;text-align:center;padding:16px;color:var(--green);font-weight:700;font-size:14px;}
-  .loading.show{display:block;}
-  .spinner{display:inline-block;width:22px;height:22px;border:3px solid var(--green-pale);border-top-color:var(--green);border-radius:50%;animation:spin 0.8s linear infinite;margin-right:8px;vertical-align:middle;}
-  @keyframes spin{to{transform:rotate(360deg);}}
-  .msg{padding:12px 14px;border-radius:10px;font-size:13px;margin-top:10px;display:none;line-height:1.5;}
-  .msg.show{display:block;}
-  .msg.error{background:var(--alert-pale);color:#c94510;border:1px solid #f4c4b0;}
-  .msg.success{background:var(--green-pale);color:var(--green);border:1px solid var(--border);}
-  .sheets-config{background:var(--green-pale);border-radius:10px;padding:14px;margin-bottom:14px;}
-  .sheets-config label{font-size:12px;font-weight:700;color:var(--green);display:block;margin-bottom:4px;}
-  .sheets-config input{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;background:var(--white);margin-bottom:10px;}
-  .sheets-config input:focus{outline:none;border-color:var(--green-light);}
-  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;}
-  .badge{display:inline-block;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700;background:var(--green-pale);color:var(--green);margin-left:4px;}
-  .free-badge{display:inline-block;background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:20px;font-size:11px;font-weight:700;padding:3px 8px;}
-  .alert-badge{display:none;background:var(--alert-pale);color:var(--accent);border:1px solid #f4c4b0;border-radius:20px;font-size:11px;font-weight:700;padding:3px 8px;}
-  .btn-del{background:none;border:none;color:#ccc;cursor:pointer;font-size:18px;padding:6px;transition:color 0.2s;}
-  .btn-del:active{color:var(--accent);}
-  .add-row-btn{margin-top:10px;background:none;border:1.5px dashed var(--border);color:var(--text-muted);border-radius:8px;padding:10px;cursor:pointer;font-size:14px;font-family:'Zen Kaku Gothic New',sans-serif;font-weight:700;width:100%;transition:all 0.2s;}
-  .add-row-btn:active{border-color:var(--green-light);color:var(--green);background:var(--green-pale);}
-  .help-text{font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.6;}
-  .install-banner{background:var(--green);color:var(--white);border-radius:12px;padding:14px 16px;margin-bottom:16px;display:none;font-size:13px;line-height:1.6;}
-  .install-banner.show{display:block;}
-  .install-banner strong{display:block;margin-bottom:4px;font-size:14px;}
-  .gas-code{background:#1a1a2e;border-radius:10px;padding:14px;font-family:'DM Mono',monospace;font-size:11px;color:#a8d89e;overflow-x:auto;white-space:pre;margin-top:10px;-webkit-overflow-scrolling:touch;}
-  .alert-box{background:var(--alert-pale);border:1px solid #f4c4b0;border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:13px;color:#c94510;display:none;}
-  .alert-box.show{display:block;}
-  .threshold-input{width:56px;padding:6px;border:1.5px solid var(--border);border-radius:6px;font-size:14px;font-family:'DM Mono',monospace;text-align:center;background:var(--white);}
-  .threshold-input:focus{outline:none;border-color:var(--green-light);}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="仕入れ自動入力">
+  <meta name="theme-color" content="#2d5a27">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="icon" href="/favicon.png">
+  <title>仕入れ自動入力 | 八百屋アプリ</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700;900&family=DM+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --green: #2d5a27;
+      --green-light: #4a8c42;
+      --green-pale: #e8f5e2;
+      --cream: #faf7f0;
+      --white: #ffffff;
+      --text: #1a1a1a;
+      --text-muted: #6b6b6b;
+      --border: #d4e8cc;
+      --shadow: rgba(45, 90, 39, 0.12);
+      --accent: #e8571a;
+      --alert-pale: #ffeee8;
+      --safe-top: env(safe-area-inset-top);
+      --safe-bottom: env(safe-area-inset-bottom);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Zen Kaku Gothic New', sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      min-height: 100dvh;
+    }
+
+    header {
+      background: var(--green);
+      padding: 16px 24px;
+      padding-top: calc(16px + var(--safe-top));
+      text-align: center;
+      box-shadow: 0 2px 12px var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    header .logo {
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--white);
+      letter-spacing: 0.04em;
+    }
+
+    main {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 20px 16px 90px;
+    }
+
+    .card {
+      background: var(--white);
+      border-radius: 16px;
+      border: 1.5px solid var(--border);
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 20px var(--shadow);
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 900;
+      color: var(--green);
+      margin-bottom: 14px;
+      border-bottom: 2px solid var(--green-pale);
+      padding-bottom: 8px;
+    }
+
+    /* ボタン類 */
+    .btn {
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: 'Zen Kaku Gothic New', sans-serif;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      display: block;
+      width: 100%;
+      text-align: center;
+      touch-action: manipulation;
+      margin-bottom: 15px;
+    }
+
+    .btn-primary {
+      background: var(--green);
+      color: var(--white);
+    }
+
+    .btn-primary:active {
+      background: var(--green-light);
+      transform: scale(0.98);
+    }
+
+    .btn-primary:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+    }
+
+    .btn-accent {
+      background: var(--accent);
+      color: var(--white);
+      margin-top: 25px;
+    }
+
+    .btn-accent:active {
+      background: #c94510;
+      transform: scale(0.98);
+    }
+
+    /* メッセージ表示部 */
+    .msg {
+      padding: 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      display: none;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .msg-error {
+      background: var(--alert-pale);
+      color: #c94510;
+      border: 1px solid #f4c4b0;
+    }
+
+    .msg-success {
+      background: var(--green-pale);
+      color: var(--green);
+      border: 1px solid var(--border);
+    }
+
+    /* 設定入力エリア */
+    .settings-group {
+      margin-bottom: 15px;
+    }
+
+    .settings-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+
+    .settings-group input {
+      width: 100%;
+      padding: 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      background: var(--cream);
+      font-family: 'DM Mono', monospace;
+    }
+
+    .settings-group input:focus {
+      outline: none;
+      border-color: var(--green-light);
+    }
+
+    /* 読み取り結果リスト */
+    #result-area {
+      display: none;
+    }
+
+    .item-card {
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 12px;
+      border-left: 6px solid var(--green);
+    }
+
+    .item-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-weight: 900;
+      font-size: 16px;
+    }
+
+    .price-info {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    .calc-box {
+      background: var(--green-pale);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .calc-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .calc-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .count-input {
+      width: 70px;
+      padding: 8px;
+      font-size: 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      text-align: center;
+    }
+
+    .sell-price {
+      color: var(--accent);
+      font-size: 18px;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .unit-price {
+      font-family: 'DM Mono', monospace;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 20px;
+      font-size: 14px;
+    }
+  </style>
 </head>
+
 <body>
-<header>
-  <div class="logo">🥦 仕入れ<span>管理</span></div>
-  <div class="date" id="today-date"></div>
-</header>
-<main>
-  <div class="install-banner" id="install-banner">
-    <strong>📱 ホーム画面に追加できます</strong>
-    iPhone: 下の共有ボタン →「ホーム画面に追加」<br>
-    Android: メニュー →「アプリをインストール」
-  </div>
+  <header>
+    <div class="logo">🥦 仕入れ自動入力</div>
+  </header>
+  <main>
 
-  <!-- 仕入れページ -->
-  <div class="page active" id="page-shiire">
-    <div class="step-indicator">
-      <div class="step active" id="step1-tab"><span class="num">①</span>伝票読取</div>
-      <div class="step" id="step2-tab"><span class="num">②</span>個数入力</div>
-      <div class="step" id="step3-tab"><span class="num">③</span>スプシ転記</div>
+    <div id="msg" class="msg"></div>
+
+    <!-- ステップ1：カメラ -->
+    <div class="card" id="step1-area">
+      <div class="card-title">1. 伝票画像を読み込む</div>
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">カメラで伝票を撮影するか、保存された写真を選ぶとAIが自動で内容を解読します。
+      </p>
+
+      <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="startUpload()">
+      <button class="btn btn-primary" id="upload-btn" onclick="document.getElementById('file-input').click()">📷 カメラ起動 /
+        写真を選択</button>
     </div>
-    <div id="panel-step1">
+
+
+    <!-- ステップ2：結果の確認と個数入力 -->
+    <div id="result-area">
       <div class="card">
-        <div class="card-title">Gemini APIキー <span class="free-badge">✨ 無料</span></div>
-        <div class="api-row">
-          <label>APIキー</label>
-          <input type="password" id="api-key" placeholder="AIza..." autocomplete="off"/>
+        <div class="card-title">2. 内容の確認と個数入力</div>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">
+          「箱」の商品には個数を入力してください。利益30%上乗せの売値（10円切上）が自動計算されます。</p>
+
+        <div id="items-container">
+          <!-- Javascriptでここにアイテムが差し込まれます -->
         </div>
-        <p class="help-text">※ <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--green);font-weight:700;">Google AI Studio</a> で無料取得。1日1,500回まで無料。</p>
-      </div>
-      <div class="card">
-        <div class="card-title">伝票写真をアップロード</div>
-        <div class="upload-area" id="upload-area">
-          <div class="upload-icon">📋</div>
-          <div class="upload-text" style="margin-bottom:14px;"><strong>伝票を選んでください</strong></div>
-          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-            <label style="background:var(--green);color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
-              📷 カメラで撮影
-              <input type="file" id="file-input-camera" accept="image/*" capture="environment" style="display:none;"/>
-            </label>
-            <label style="background:var(--white);color:var(--green);border:2px solid var(--green);padding:12px 20px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
-              🖼 アルバムから選ぶ
-              <input type="file" id="file-input-album" accept="image/*" style="display:none;"/>
-            </label>
-          </div>
-          <img id="preview-img" alt="プレビュー"/>
-        </div>
-        <div class="loading" id="ocr-loading"><span class="spinner"></span>読み取り中...</div>
-        <div class="msg" id="ocr-msg"></div>
-        <button class="btn btn-primary" id="ocr-btn" style="margin-top:14px;" disabled>📷 伝票を読み取る</button>
+
+        <button class="btn btn-accent" id="save-btn" onclick="sendToGAS()">📊 スプレッドシートに保存</button>
+        <button class="btn btn-primary" style="background:#aaa; margin-top:10px;" onclick="resetApp()">← やり直す</button>
       </div>
     </div>
-    <div id="panel-step2" style="display:none;">
-      <div class="card">
-        <div class="card-title">仕入れ一覧 <span class="badge" id="item-count">0件</span></div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>品名</th><th>箱単価</th><th>個数</th><th>バラ単価</th><th>売値×1.2</th><th></th></tr></thead>
-            <tbody id="items-body"></tbody>
-          </table>
-        </div>
-        <button class="add-row-btn" id="add-row-btn">＋ 行を追加</button>
-        <div class="btn-row">
-          <button class="btn btn-outline" id="back-btn">← 戻る</button>
-          <button class="btn btn-primary" id="next-btn" style="flex:1;">スプシに転記 →</button>
-        </div>
-      </div>
-    </div>
-    <div id="panel-step3" style="display:none;">
-      <div class="card">
-        <div class="card-title">Google スプレッドシートに転記</div>
-        <div class="sheets-config">
-          <label>スプレッドシートID</label>
-          <input type="text" id="sheet-id" placeholder="URLの /d/ と /edit の間の文字列"/>
-          <label>GAS URL</label>
-          <input type="text" id="gas-url" placeholder="https://script.google.com/macros/s/..."/>
-        </div>
-        <div class="loading" id="sheets-loading"><span class="spinner"></span>転記中...</div>
-        <div class="msg" id="sheets-msg"></div>
-        <div class="btn-row">
-          <button class="btn btn-outline" id="back-btn2">← 戻る</button>
-          <button class="btn btn-accent" id="sheets-btn" style="flex:1;">📊 転記＋在庫更新</button>
-        </div>
-        <div style="margin-top:10px;">
-          <button class="btn btn-outline" id="csv-btn" style="width:100%;">⬇ CSVダウンロード</button>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">⚠️ GASコードの差し替えが必要です</div>
-        <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">在庫機能追加のため、Apps Scriptのコードを新しいものに差し替えてください。</p>
-        <ol style="font-size:13px;line-height:2.2;color:var(--text-muted);padding-left:18px;">
-          <li>Apps Scriptを開き既存コードを全削除</li>
-          <li>下記コードを貼り付けて保存</li>
-          <li>「デプロイ」→「デプロイを管理」→ 鉛筆マーク→「バージョン：新バージョン」→「デプロイ」</li>
-        </ol>
-        <div class="gas-code">function doPost(e) {
-  var data = JSON.parse(e.postData.contents);
-  var action = data.action || 'addShiire';
-  if (action === 'addShiire')    return addShiire(data);
-  if (action === 'getStock')     return getStock(data);
-  if (action === 'sellStock')    return sellStock(data);
-  if (action === 'setThreshold') return setThreshold(data);
-  return json({status:'error'});
-}
 
-function addShiire(data) {
-  var ss = SpreadsheetApp.openById(data.sheetId);
-  var sheet = ss.getSheetByName('仕入れ記録') || ss.insertSheet('仕入れ記録');
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(['日付','品名','箱単価','個数','バラ単価','売値(×1.2)','合計仕入額']);
-    sheet.getRange(1,1,1,7).setFontWeight('bold')
-      .setBackground('#2d5a27').setFontColor('#ffffff');
-  }
-  data.rows.forEach(function(row) { sheet.appendRow(row); });
+  </main>
 
-  var stock = ss.getSheetByName('在庫') || ss.insertSheet('在庫');
-  if (stock.getLastRow() === 0) {
-    stock.appendRow(['品名','在庫数','アラート閾値','最終更新']);
-    stock.getRange(1,1,1,4).setFontWeight('bold')
-      .setBackground('#2d5a27').setFontColor('#ffffff');
-  }
-  data.rows.forEach(function(row) {
-    var name = row[1], qty = Number(row[3]) || 0;
-    if (!name || !qty) return;
-    var last = stock.getLastRow();
-    for (var r = 2; r <= last; r++) {
-      if (stock.getRange(r,1).getValue() === name) {
-        stock.getRange(r,2).setValue(Number(stock.getRange(r,2).getValue())||0 + qty);
-        stock.getRange(r,4).setValue(new Date());
+  <script>
+    // ==========================================
+    // ★ 管理者設定（裏の初期設定）★
+    // ==========================================
+    const SPREADSHEET_ID = '1HtvxKSP-zIAfH_5hsXJCAoShJJnC2Vgbmm7EjG9SgyE'; // ご指定のシートID
+    const GAS_URL = 'https://script.google.com/a/macros/npo-pao.org/s/AKfycbyBcYuCJIE4TEt4TFbIecRe5gSCK1D1MgXf_HkFo7-i324Cu3om02_5eLHYWDy20oo/exec';
+    // ==========================================
+
+    let currentItems = []; // 読み取ったデータ
+
+    // カメラ・写真選択後の処理（GASに画像を投げてOCR結果をもらう）
+    function startUpload() {
+      const fileInput = document.getElementById('file-input');
+
+      if (GAS_URL === 'YOUR_GAS_URL_HERE' || GAS_URL === '') {
+        showMsg('エラー：ソースコード内の GAS_URL が設定されていません。', 'error');
         return;
       }
+      if (fileInput.files.length === 0) return;
+
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+
+      const btn = document.getElementById('upload-btn');
+      btn.disabled = true;
+      btn.innerText = '⏳ AIが伝票を解読しています... (約10〜15秒)';
+
+      reader.onload = async function (e) {
+        const base64Data = e.target.result.split(',')[1];
+
+        try {
+          // GASにPOSTリクエストを送る (action: 'ocr')
+          const response = await fetch(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'ocr',
+              base64Image: base64Data,
+              mimeType: file.type || 'image/jpeg'
+            })
+          });
+
+          const data = await response.json();
+
+          if (data.status === 'error') {
+            throw new Error(data.message);
+          }
+
+          // 成功した場合
+          currentItems = data.items || [];
+          if (currentItems.length === 0) {
+            throw new Error("画像から商品が見つかりませんでした。");
+          }
+
+          // 画面をステップ2（結果表示）へ切り替える
+          document.getElementById('step1-area').style.display = 'none';
+          document.getElementById('result-area').style.display = 'block';
+          renderItems();
+
+        } catch (err) {
+          showMsg('❌ エラー: ' + err.message, 'error');
+        } finally {
+          btn.disabled = false;
+          btn.innerText = '📷 カメラ起動 / 写真を選択';
+          fileInput.value = ''; // 次同じファイルが選べるようにクリア
+        }
+      };
+      reader.readAsDataURL(file);
     }
-    stock.appendRow([name, qty, 5, new Date()]);
-  });
-  return json({status:'ok'});
-}
 
-function getStock(data) {
-  var ss = SpreadsheetApp.openById(data.sheetId);
-  var stock = ss.getSheetByName('在庫');
-  if (!stock || stock.getLastRow() < 2) return json({status:'ok', items:[]});
-  var rows = stock.getRange(2,1,stock.getLastRow()-1,4).getValues();
-  var items = rows.filter(r=>r[0]).map(r=>({
-    品名:r[0], 在庫数:r[1], 閾値:r[2]||5
-  }));
-  return json({status:'ok', items:items});
-}
+    // 画面に読み取ったアイテムを描画する
+    function renderItems() {
+      const container = document.getElementById('items-container');
+      container.innerHTML = '';
 
-function sellStock(data) {
-  var ss = SpreadsheetApp.openById(data.sheetId);
-  var stock = ss.getSheetByName('在庫');
-  if (!stock) return json({status:'error', message:'在庫シートがありません'});
-  for (var r = 2; r <= stock.getLastRow(); r++) {
-    if (stock.getRange(r,1).getValue() === data.品名) {
-      var cur = Number(stock.getRange(r,2).getValue()) || 0;
-      var newQty = Math.max(0, cur - Number(data.売数));
-      stock.getRange(r,2).setValue(newQty);
-      stock.getRange(r,4).setValue(new Date());
-      return json({status:'ok', 在庫数:newQty});
+      currentItems.forEach((item, index) => {
+        let calcHtml = '';
+
+        // 箱なら個数入力欄を出す
+        if (item.単位 === '箱') {
+          calcHtml = `
+          <div class="calc-box">
+            <div class="calc-row">
+              <label>この箱、何個入り？</label>
+              <input type="number" class="count-input" id="count-${index}" placeholder="10" oninput="calcPrice(${index}, ${item.仕入価格})" inputmode="numeric">
+            </div>
+            <div class="calc-row">
+              <span style="color:var(--text-muted); font-weight:normal;">1個あたり単価:</span>
+              <span class="unit-price"><span id="unit-price-${index}">-</span> 円</span>
+            </div>
+            <div class="calc-row">
+              <span style="color:var(--text-muted); font-weight:normal;">売値目安(30%益):</span>
+              <span class="sell-price"><span id="sell-price-${index}">-</span> 円</span>
+            </div>
+          </div>
+        `;
+        } else {
+          // バラやそれ以外は個数入力なしで、すぐに売価を表示
+          const sell = Math.ceil((item.仕入価格 * 1.3) / 10) * 10;
+          item.単価 = item.仕入価格;
+          item.売値 = sell;
+          calcHtml = `
+          <div class="calc-box" style="background:var(--cream); border:1px solid #eee;">
+            <div class="calc-row">
+              <span style="color:var(--text-muted); font-weight:normal;">売値目安(30%益):</span>
+              <span class="sell-price">${sell} 円</span>
+            </div>
+          </div>
+        `;
+        }
+
+        container.innerHTML += `
+        <div class="item-card">
+          <div class="item-head">
+            <span>${item.商品名}</span>
+            <span>${item.仕入価格}円</span>
+          </div>
+          <div class="price-info">単位: ${item.単位}</div>
+          ${calcHtml}
+        </div>
+      `;
+      });
     }
-  }
-  return json({status:'error', message:'品名が見つかりません'});
-}
 
-function setThreshold(data) {
-  var ss = SpreadsheetApp.openById(data.sheetId);
-  var stock = ss.getSheetByName('在庫');
-  if (!stock) return json({status:'error'});
-  for (var r = 2; r <= stock.getLastRow(); r++) {
-    if (stock.getRange(r,1).getValue() === data.品名) {
-      stock.getRange(r,3).setValue(Number(data.閾値));
-      return json({status:'ok'});
+    // 個数を入れた瞬間に単価と売値を再計算する
+    function calcPrice(index, totalPrice) {
+      const countInput = document.getElementById(`count-${index}`).value;
+      const count = Number(countInput);
+
+      if (count > 0) {
+        const unitPrice = Math.floor(totalPrice / count); // 単価（切り捨て）
+        const sellPrice = Math.ceil((unitPrice * 1.3) / 10) * 10; // 売値（1.3倍して10円切り上げ）
+
+        document.getElementById(`unit-price-${index}`).innerText = unitPrice;
+        document.getElementById(`sell-price-${index}`).innerText = sellPrice;
+
+        // データ本体も更新
+        currentItems[index].個数 = count;
+        currentItems[index].単価 = unitPrice;
+        currentItems[index].売値 = sellPrice;
+      } else {
+        document.getElementById(`unit-price-${index}`).innerText = '-';
+        document.getElementById(`sell-price-${index}`).innerText = '-';
+        currentItems[index].個数 = '';
+      }
     }
-  }
-  return json({status:'error'});
-}
 
-function json(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
-}</div>
-      </div>
-    </div>
-  </div>
+    // 確定したデータをGAS(スプレッドシート)に保存する
+    async function sendToGAS() {
+      const btn = document.getElementById('save-btn');
+      btn.disabled = true;
+      btn.innerText = '⏳ 保存中...';
 
-  <!-- 在庫ページ -->
-  <div class="page" id="page-zaiko">
-    <div class="card">
-      <div class="card-title">在庫一覧 <span class="alert-badge" id="alert-count"></span></div>
-      <div class="sheets-config">
-        <label>スプレッドシートID</label>
-        <input type="text" id="stock-sheet-id" placeholder="仕入れページと同じID"/>
-        <label>GAS URL</label>
-        <input type="text" id="stock-gas-url" placeholder="https://script.google.com/macros/s/..."/>
-      </div>
-      <button class="btn btn-primary" id="load-stock-btn">🔄 在庫を読み込む</button>
-      <div class="loading" id="stock-loading" style="margin-top:12px;"><span class="spinner"></span>読み込み中...</div>
-      <div class="msg" id="stock-msg"></div>
-    </div>
-    <div class="alert-box" id="alert-box">
-      <strong>⚠️ 残り少ない商品</strong>
-      <div id="alert-list" style="margin-top:6px;line-height:2;"></div>
-    </div>
-    <div id="stock-list"></div>
-  </div>
+      try {
+        const response = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'save',
+            sheetId: SPREADSHEET_ID,
+            items: currentItems
+          })
+        });
 
-  <!-- 設定ページ -->
-  <div class="page" id="page-settings">
-    <div class="card">
-      <div class="card-title">設定を保存</div>
-      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">一度保存すれば次回から自動入力されます。</p>
-      <div class="sheets-config">
-        <label>Gemini APIキー</label>
-        <input type="password" id="save-api-key" placeholder="AIza..."/>
-        <label>スプレッドシートID</label>
-        <input type="text" id="save-sheet-id" placeholder="スプレッドシートID"/>
-        <label>GAS URL</label>
-        <input type="text" id="save-gas-url" placeholder="https://script.google.com/macros/s/..."/>
-      </div>
-      <button class="btn btn-primary" id="save-settings-btn">💾 設定を保存</button>
-      <div class="msg" id="settings-msg"></div>
-    </div>
-  </div>
-</main>
+        const data = await response.json();
 
-<div class="bottom-nav">
-  <button class="nav-btn active" id="nav-shiire" onclick="showPage('shiire')">
-    <span class="nav-icon">📋</span>仕入れ
-  </button>
-  <button class="nav-btn" id="nav-zaiko" onclick="showPage('zaiko')">
-    <span class="nav-icon">📦</span>在庫
-  </button>
-  <button class="nav-btn" id="nav-settings" onclick="showPage('settings')">
-    <span class="nav-icon">⚙️</span>設定
-  </button>
-</div>
+        if (data.status === 'error') {
+          throw new Error(data.message);
+        }
 
-<script>
-const today = new Date();
-document.getElementById('today-date').textContent =
-  today.toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'});
+        alert("✅ スプレッドシートに保存しました！");
+        resetApp();
 
-if(/iPhone|iPad|Android/.test(navigator.userAgent)&&!window.matchMedia('(display-mode:standalone)').matches)
-  document.getElementById('install-banner').classList.add('show');
-if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+      } catch (err) {
+        alert("保存エラー: " + err.message);
+        btn.disabled = false;
+        btn.innerText = '📊 スプレッドシートに保存（リトライ）';
+      }
+    }
 
-// 設定保存（localStorage）
-function applySettings(){
-  const k=localStorage.getItem('gemini_key')||'';
-  const s=localStorage.getItem('sheet_id')||'';
-  const g=localStorage.getItem('gas_url')||'';
-  document.getElementById('api-key').value=k;
-  document.getElementById('sheet-id').value=s;
-  document.getElementById('gas-url').value=g;
-  document.getElementById('stock-sheet-id').value=s;
-  document.getElementById('stock-gas-url').value=g;
-  document.getElementById('save-api-key').value=k;
-  document.getElementById('save-sheet-id').value=s;
-  document.getElementById('save-gas-url').value=g;
-}
-applySettings();
-document.getElementById('save-settings-btn').addEventListener('click',()=>{
-  const k=document.getElementById('save-api-key').value.trim();
-  const s=document.getElementById('save-sheet-id').value.trim();
-  const g=document.getElementById('save-gas-url').value.trim();
-  if(k) localStorage.setItem('gemini_key',k);
-  if(s) localStorage.setItem('sheet_id',s);
-  if(g) localStorage.setItem('gas_url',g);
-  showMsg('settings-msg','success','✅ 保存しました！次回から自動入力されます。');
-  applySettings();
-});
+    // 最初の画面に戻す
+    function resetApp() {
+      document.getElementById('step1-area').style.display = 'block';
+      document.getElementById('result-area').style.display = 'none';
+      const uploadBtn = document.getElementById('upload-btn');
+      uploadBtn.disabled = false;
+      uploadBtn.innerText = '📷 カメラ起動 / 写真を選択';
 
-// ページ切替
-function showPage(name){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
-  document.getElementById('nav-'+name).classList.add('active');
-  window.scrollTo({top:0,behavior:'smooth'});
-}
+      const btnSave = document.getElementById('save-btn');
+      btnSave.disabled = false;
+      btnSave.innerText = '📊 スプレッドシートに保存';
 
-// 仕入れ
-let items=[],imageBase64='',imageMimeType='image/jpeg';
-const previewImg=document.getElementById('preview-img');
-const ocrBtn=document.getElementById('ocr-btn');
+      currentItems = [];
+      document.getElementById('msg').style.display = 'none';
+      window.scrollTo(0, 0);
+    }
 
-function handleFileSelect(file) {
-  if(!file)return;
-  imageMimeType=file.type||'image/jpeg';
-  const reader=new FileReader();
-  reader.onload=ev=>{previewImg.src=ev.target.result;previewImg.style.display='block';imageBase64=ev.target.result.split(',')[1];ocrBtn.disabled=false;};
-  reader.readAsDataURL(file);
-}
-document.getElementById('file-input-camera').addEventListener('change',e=>handleFileSelect(e.target.files[0]));
-document.getElementById('file-input-album').addEventListener('change',e=>handleFileSelect(e.target.files[0]));
+    // メッセージ表示UI
+    function showMsg(text, type) {
+      const msgDiv = document.getElementById('msg');
+      msgDiv.innerText = text;
+      msgDiv.className = type === 'success' ? 'msg msg-success' : 'msg msg-error';
+      msgDiv.style.display = 'block';
+      setTimeout(() => { msgDiv.style.display = 'none'; }, 6000);
+    }
 
-ocrBtn.addEventListener('click',async()=>{
-  const apiKey=document.getElementById('api-key').value.trim();
-  if(!apiKey){showMsg('ocr-msg','error','APIキーを入力してください。');return;}
-  if(!imageBase64){showMsg('ocr-msg','error','画像を選択してください。');return;}
-  ocrBtn.disabled=true;
-  document.getElementById('ocr-loading').classList.add('show');hideMsg('ocr-msg');
-  try{
-    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({contents:[{parts:[{inline_data:{mime_type:imageMimeType,data:imageBase64}},{text:`この伝票画像から商品情報を読み取り、以下のJSON形式のみで返してください。前置き・説明・マークダウン不要。\n{"items":[{"品名":"トマト","箱単価":1800}]}\n金額は数値のみ（円マーク・カンマ除外）。読み取れなければ{"items":[]}で返してください。`}]}]})
-    });
-    const data=await res.json();
-    if(!res.ok) throw new Error(data.error?.message||'APIエラー');
-    const text=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
-    const match=text.match(/\{[\s\S]*\}/);
-    if(!match) throw new Error('JSONが取得できませんでした');
-    const parsed=JSON.parse(match[0]);
-    items=(parsed.items||[]).map(i=>({品名:i.品名||'',箱単価:Number(i.箱単価)||0,個数:''}));
-    if(items.length===0){showMsg('ocr-msg','error','読み取れませんでした。手動で入力してください。');items=[{品名:'',箱単価:0,個数:''}];}
-    else showMsg('ocr-msg','success',`✅ ${items.length}件の商品を読み取りました！`);
-    renderTable();goToStep(2);
-  }catch(err){showMsg('ocr-msg','error','エラー: '+err.message);}
-  finally{document.getElementById('ocr-loading').classList.remove('show');ocrBtn.disabled=false;}
-});
-
-function renderTable(){
-  const tbody=document.getElementById('items-body');tbody.innerHTML='';
-  document.getElementById('item-count').textContent=items.length+'件';
-  items.forEach((item,i)=>{
-    const bara=item.個数&&item.箱単価?(item.箱単価/item.個数).toFixed(1):'—';
-    const sell=item.個数&&item.箱単価?Math.ceil(item.箱単価/item.個数*1.2):'—';
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td><input class="cell-input" style="width:76px;" type="text" value="${item.品名}" data-i="${i}" data-field="品名"/></td><td><input class="cell-input" type="number" value="${item.箱単価||''}" data-i="${i}" data-field="箱単価" placeholder="0" inputmode="numeric"/></td><td><input class="cell-input" type="number" value="${item.個数||''}" data-i="${i}" data-field="個数" placeholder="個数" inputmode="numeric"/></td><td class="price-calc">${bara!=='—'?bara+'円':'—'}</td><td class="price-calc sell-price">${sell!=='—'?sell+'円':'—'}</td><td><button class="btn-del" data-i="${i}">✕</button></td>`;
-    tbody.appendChild(tr);
-  });
-  tbody.querySelectorAll('.cell-input').forEach(input=>{input.addEventListener('input',e=>{const i=parseInt(e.target.dataset.i),f=e.target.dataset.field;items[i][f]=f==='品名'?e.target.value:Number(e.target.value);updateRow(i);});});
-  tbody.querySelectorAll('.btn-del').forEach(btn=>{btn.addEventListener('click',e=>{items.splice(parseInt(e.target.dataset.i),1);renderTable();});});
-}
-function updateRow(i){
-  const rows=document.getElementById('items-body').rows,item=items[i];
-  const bara=item.個数&&item.箱単価?(item.箱単価/item.個数).toFixed(1):'—';
-  const sell=item.個数&&item.箱単価?Math.ceil(item.箱単価/item.個数*1.2):'—';
-  rows[i].cells[3].textContent=bara!=='—'?bara+'円':'—';
-  rows[i].cells[4].textContent=sell!=='—'?sell+'円':'—';
-}
-document.getElementById('add-row-btn').addEventListener('click',()=>{
-  items.push({品名:'',箱単価:0,個数:''});renderTable();
-  const inputs=document.getElementById('items-body').querySelectorAll('.cell-input');
-  if(inputs.length) inputs[inputs.length-4].focus();
-});
-document.getElementById('sheets-btn').addEventListener('click',async()=>{
-  const gasUrl=document.getElementById('gas-url').value.trim();
-  const sheetId=document.getElementById('sheet-id').value.trim();
-  if(!gasUrl){showMsg('sheets-msg','error','GAS URLを入力してください。');return;}
-  if(!sheetId){showMsg('sheets-msg','error','スプレッドシートIDを入力してください。');return;}
-  document.getElementById('sheets-loading').classList.add('show');hideMsg('sheets-msg');
-  const dateStr=today.toLocaleDateString('ja-JP');
-  const rows=items.map(item=>{
-    const bara=item.個数&&item.箱単価?(item.箱単価/item.個数).toFixed(1):'';
-    const sell=item.個数&&item.箱単価?Math.ceil(item.箱単価/item.個数*1.2):'';
-    return[dateStr,item.品名,item.箱単価,item.個数,bara,sell,item.箱単価];
-  });
-  try{
-    const res=await fetch(gasUrl,{method:'POST',body:JSON.stringify({action:'addShiire',sheetId,rows})});
-    const data=await res.json();
-    if(data.status==='ok') showMsg('sheets-msg','success','✅ 転記＆在庫を更新しました！');
-    else throw new Error(data.message||'失敗しました');
-  }catch(err){showMsg('sheets-msg','error','エラー: '+err.message);}
-  finally{document.getElementById('sheets-loading').classList.remove('show');}
-});
-document.getElementById('csv-btn').addEventListener('click',()=>{
-  const dateStr=today.toLocaleDateString('ja-JP');
-  let csv='日付,品名,箱単価,個数,バラ単価,売値(×1.2),合計仕入額\n';
-  items.forEach(item=>{const bara=item.個数&&item.箱単価?(item.箱単価/item.個数).toFixed(1):'';const sell=item.個数&&item.箱単価?Math.ceil(item.箱単価/item.個数*1.2):'';csv+=`${dateStr},${item.品名},${item.箱単価},${item.個数},${bara},${sell},${item.箱単価}\n`;});
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));a.download=`仕入れ_${dateStr.replace(/\//g,'-')}.csv`;a.click();
-});
-document.getElementById('back-btn').addEventListener('click',()=>goToStep(1));
-document.getElementById('back-btn2').addEventListener('click',()=>goToStep(2));
-document.getElementById('next-btn').addEventListener('click',()=>goToStep(3));
-function goToStep(n){
-  ['panel-step1','panel-step2','panel-step3'].forEach((id,i)=>{document.getElementById(id).style.display=i+1===n?'block':'none';});
-  ['step1-tab','step2-tab','step3-tab'].forEach((id,i)=>{const el=document.getElementById(id);el.classList.remove('active','done');if(i+1===n)el.classList.add('active');else if(i+1<n)el.classList.add('done');});
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-
-// 在庫
-document.getElementById('load-stock-btn').addEventListener('click',loadStock);
-async function loadStock(){
-  const gasUrl=document.getElementById('stock-gas-url').value.trim();
-  const sheetId=document.getElementById('stock-sheet-id').value.trim();
-  if(!gasUrl||!sheetId){showMsg('stock-msg','error','GAS URLとスプレッドシートIDを入力してください。');return;}
-  document.getElementById('stock-loading').classList.add('show');hideMsg('stock-msg');
-  try{
-    const res=await fetch(gasUrl,{method:'POST',body:JSON.stringify({action:'getStock',sheetId})});
-    const data=await res.json();
-    if(data.status!=='ok') throw new Error(data.message||'取得失敗');
-    renderStock(data.items||[]);
-  }catch(err){showMsg('stock-msg','error','エラー: '+err.message);}
-  finally{document.getElementById('stock-loading').classList.remove('show');}
-}
-function renderStock(stockItems){
-  const list=document.getElementById('stock-list');list.innerHTML='';
-  const alertBox=document.getElementById('alert-box');
-  const alertList=document.getElementById('alert-list');
-  const alertCount=document.getElementById('alert-count');
-  alertList.innerHTML='';
-  const lowItems=stockItems.filter(s=>Number(s.在庫数)<=Number(s.閾値||5));
-  if(lowItems.length>0){
-    alertBox.classList.add('show');
-    alertCount.style.display='inline-block';
-    alertCount.textContent=`⚠ ${lowItems.length}品目`;
-    lowItems.forEach(s=>{const d=document.createElement('div');d.textContent=`・${s.品名}：残り${s.在庫数}個`;alertList.appendChild(d);});
-  }else{alertBox.classList.remove('show');alertCount.style.display='none';}
-  if(stockItems.length===0){list.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:24px;font-size:14px;">在庫データがありません。<br>仕入れを転記すると自動で追加されます。</div>';return;}
-  stockItems.forEach(s=>{
-    const isLow=Number(s.在庫数)<=Number(s.閾値||5);
-    const card=document.createElement('div');
-    card.className='card'+(isLow?' low-stock':'');
-    card.style.marginBottom='12px';
-    card.innerHTML=`
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-        <div style="flex:1;">
-          <div style="font-weight:900;font-size:16px;">${s.品名}</div>
-          ${isLow?'<div style="color:var(--accent);font-size:12px;font-weight:700;">⚠ 残り少ない！</div>':''}
-        </div>
-        <div style="text-align:right;">
-          <div style="font-family:\'DM Mono\',monospace;font-size:30px;font-weight:700;color:${isLow?'var(--accent)':'var(--green)'};">${s.在庫数}</div>
-          <div style="font-size:11px;color:var(--text-muted);">個</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <input type="number" class="cell-input" style="width:70px;" placeholder="売数" inputmode="numeric" id="sell-input-${s.品名}"/>
-        <button class="btn btn-accent btn-sm" onclick="sellStock('${s.品名}')">販売入力</button>
-        <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
-          <span style="font-size:11px;color:var(--text-muted);">閾値</span>
-          <input type="number" class="threshold-input" value="${s.閾値||5}" id="th-${s.品名}" inputmode="numeric"/>
-          <button class="btn btn-outline btn-sm" onclick="setThreshold('${s.品名}')">更新</button>
-        </div>
-      </div>`;
-    list.appendChild(card);
-  });
-}
-async function sellStock(品名){
-  const gasUrl=document.getElementById('stock-gas-url').value.trim();
-  const sheetId=document.getElementById('stock-sheet-id').value.trim();
-  const input=document.getElementById(`sell-input-${品名}`);
-  const 売数=parseInt(input.value);
-  if(!売数||売数<=0){alert('販売数を入力してください');return;}
-  try{
-    const res=await fetch(gasUrl,{method:'POST',body:JSON.stringify({action:'sellStock',sheetId,品名,売数})});
-    const data=await res.json();
-    if(data.status==='ok'){input.value='';showMsg('stock-msg','success',`✅ ${品名}を${売数}個販売。残り${data.在庫数}個`);loadStock();}
-    else throw new Error(data.message);
-  }catch(err){showMsg('stock-msg','error','エラー: '+err.message);}
-}
-async function setThreshold(品名){
-  const gasUrl=document.getElementById('stock-gas-url').value.trim();
-  const sheetId=document.getElementById('stock-sheet-id').value.trim();
-  const 閾値=parseInt(document.getElementById(`th-${品名}`).value);
-  if(!閾値||閾値<0)return;
-  try{
-    const res=await fetch(gasUrl,{method:'POST',body:JSON.stringify({action:'setThreshold',sheetId,品名,閾値})});
-    const data=await res.json();
-    if(data.status==='ok') showMsg('stock-msg','success',`✅ ${品名}のアラート閾値を${閾値}個に設定`);
-  }catch(err){showMsg('stock-msg','error','エラー: '+err.message);}
-}
-
-function showMsg(id,type,text){const el=document.getElementById(id);if(!el)return;el.className=`msg show ${type}`;el.textContent=text;}
-function hideMsg(id){const el=document.getElementById(id);if(el)el.classList.remove('show');}
-</script>
+  </script>
 </body>
+
 </html>
