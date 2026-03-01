@@ -303,7 +303,7 @@
     // ★ 管理者設定（裏の初期設定）★
     // ==========================================
     const SPREADSHEET_ID = '1HtvxKSP-zIAfH_5hsXJCAoShJJnC2Vgbmm7EjG9SgyE'; // ご指定のシートID
-    const GAS_URL = 'https://script.google.com/a/macros/npo-pao.org/s/AKfycbyBcYuCJIE4TEt4TFbIecRe5gSCK1D1MgXf_HkFo7-i324Cu3om02_5eLHYWDy20oo/exec';
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbyBcYuCJIE4TEt4TFbIecRe5gSCK1D1MgXf_HkFo7-i324Cu3om02_5eLHYWDy20oo/exec';
     // ==========================================
 
     let currentItems = []; // 読み取ったデータ
@@ -329,16 +329,20 @@
         const base64Data = e.target.result.split(',')[1];
 
         try {
-          // GASにPOSTリクエストを送る (action: 'ocr')
+          // GASにPOSTリクエストを送る
+          // ※fetch(GAS_URL) はリダイレクトとCORSの相性が悪いため、エラー時は詳細を表示
           const response = await fetch(GAS_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               action: 'ocr',
               base64Image: base64Data,
               mimeType: file.type || 'image/jpeg'
             })
           });
+
+          if (!response.ok) {
+            throw new Error('サーバー側でエラーが発生しました。GASのデプロイ設定を確認してください。');
+          }
 
           const data = await response.json();
 
@@ -358,7 +362,14 @@
           renderItems();
 
         } catch (err) {
-          showMsg('❌ エラー: ' + err.message, 'error');
+          console.error(err);
+          let errorMsg = '❌ エラーが発生しました。';
+          if (err.message.includes('fetch')) {
+            errorMsg = '❌ 通信エラー（CORS）: GASのURLが正しいか、公開設定が「全員」になっているか確認してください。';
+          } else {
+            errorMsg = '❌ エラー: ' + err.message;
+          }
+          showMsg(errorMsg, 'error');
         } finally {
           btn.disabled = false;
           btn.innerText = '📷 カメラ起動 / 写真を選択';
